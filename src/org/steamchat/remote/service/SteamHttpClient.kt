@@ -8,14 +8,18 @@ private class SteamHttpClient(val hostname: String, val port: Int) {
 
     fun get(account: Account, path: String): String? {
         val client = DefaultHttpClient()
-        val h = HttpGet(hostname + path)
+        val h = HttpGet("http://" + hostname + path)
 
         return client.execute(h, BasicResponseHandler())
     }
 
-    fun post(account: Account, path: String, content: String): String? {
+    fun post(account: Account, path: String, params: Map<String, Any>): String? {
         val client = DefaultHttpClient()
-        val h = HttpPost(hostname + path)
+        val h = HttpPost("http://" + hostname + path)
+
+        for((k, v) in params) {
+            h.getParams()?.setParameter(k, v)
+        }
 
         return client.execute(h, BasicResponseHandler())
     }

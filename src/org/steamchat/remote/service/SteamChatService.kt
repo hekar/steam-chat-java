@@ -9,21 +9,24 @@ class SteamChatService() {
     val steamCommunityHttp = SteamHttpClient("steamcommunity.com", 80)
 
     fun login(username: String, password: String, steamGuardCode: String = ""): Unit {
-        val sb = StringBuilder()
-        sb.append("client_id=3638BFB1&")
-        sb.append("grant_type=password&")
-        sb.append("username=%s&".format(username))
-        sb.append("password=%s&".format(password))
+        val params = mapOf(
+                "client_id" to "3638BFB1",
+                "grant_type" to "password",
+                "username" to username,
+                "password" to password,
+                "x_webcookie" to "",
+                "scope" to "read_profile write_profile read_client write_client"
+        )
 
         if (!steamGuardCode.isEmpty()) {
-            sb.append("x_emailauthcode=%s&".format(steamGuardCode))
+            // TODO:
+            //sb.append("x_emailauthcode=%s&".format(steamGuardCode))
         }
 
-        sb.append("x_webcookie=&")
-        sb.append("scope=read_profile write_profile read_client write_client")
-
         val sa = Account()
-        http.post(sa, "/ISteamOAuth2/GetTokenWithCredentials/v0001", sb.toString())
+        val response = http.post(sa, "/ISteamOAuth2/GetTokenWithCredentials/v0001", params)
+
+        println(response)
     }
     
     fun newSession(account: Account): Session {
@@ -42,12 +45,13 @@ class SteamChatService() {
 
     fun addFriend(session: Session, friend: Account): Unit {
         val sa = session.steamAccount
-        val sb = StringBuilder()
 
-        sb.append("steamid=%s&".format(friend.steamid))
-        sb.append("sessionID=%s".format(sa.sessionid))
+        val params = mapOf(
+                "steamid" to friend.steamid,
+                "sessionID" to sa.sessionid
+        )
 
-        steamCommunityHttp.post(sa, "steamcommunity.com", "/actions/AddFriendAjax")
+        steamCommunityHttp.post(sa, "/actions/AddFriendAjax", params)
     }
 
     fun removeFriend(session: Session, friend: Account): Unit {
@@ -69,22 +73,15 @@ class SteamChatService() {
         val sa = session.steamAccount
         val msg = message.content
 
-        val sb = StringBuilder()
+        val params = mapOf(
+                "access_token" to sa.accessToken,
+                "umqid" to sa.umqid,
+                "type" to if (msg.startsWith("/me ")) "emote" else "saytext",
+                "text" to msg,
+                "steamid_dst" to message.to.steamid
+        )
 
-        sb.append("access_token=%s&".format(sa.accessToken))
-        sb.append("umqid=%s&".format(sa.umqid))
-
-        // TODO: Strip html
-        if (msg.startsWith("/me "))
-        {
-            sb.append("type=emote&")
-        } else {
-            sb.append("type=saytext&")
-        }
-        sb.append("text=%s&".format(msg))
-        sb.append("steamid_dst=%s".format(message.to.steamid))
-
-        http.post(sa, "/ISteamWebUserPresenceOAuth/Message/v0001", sb.toString())
+        http.post(sa, "/ISteamWebUserPresenceOAuth/Message/v0001", params)
     }
 
     fun setChatStatus(session: Session, chatStatus: ChatStatus): Unit {
