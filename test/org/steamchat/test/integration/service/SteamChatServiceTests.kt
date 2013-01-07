@@ -10,6 +10,6 @@ public class SteamChatServiceTests {
         val sa = Account()
 
         val s = SteamChatService()
-        s.login("hekark", "slackware1")
+        s.login("hekark", Const.PASSWORD)
     }
 }
